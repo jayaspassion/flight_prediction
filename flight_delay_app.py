@@ -63,16 +63,6 @@ def add_flight(flight):
     cursor.close()
     connection.close()
 
-# Fetch distinct airline options
-def fetch_airline_options():
-    connection = get_db_connection()
-    cursor = connection.cursor()
-    cursor.execute("SELECT DISTINCT AIRLINE FROM flight_data ORDER BY AIRLINE")
-    airlines = [row[0] for row in cursor.fetchall()]
-    cursor.close()
-    connection.close()
-    return airlines
-
 # Streamlit UI
 st.title("Flight Management")
 
@@ -81,8 +71,8 @@ st.header("Search Flights")
 input_fl_number = st.text_input("Enter Flight Number")
 input_fl_date = st.date_input("Select Flight Date")
 # Fetch airline options for dropdown
-airlines = fetch_airline_options()
-selected_airline = st.selectbox("Select Airline", options=airlines)
+airline_options = ["Delta Air Lines Inc.", "United Air Lines Inc.", "American Airlines Inc.", "Southwest Airlines Co.", "JetBlue Airways", "Alaska Airlines Inc."]
+selected_airline = st.selectbox("Select Airline", options=airline_options)
 
 if st.button("Search Flight"):
     if input_fl_number and input_fl_date and selected_airline:
