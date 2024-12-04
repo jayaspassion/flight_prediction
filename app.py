@@ -1,14 +1,13 @@
 import streamlit as st
-import mysql.connector
 import pandas as pd
+from models import fetch_flights_by_filters, add_flight, delete_flight
 
+# Streamlit UI setup
 st.set_page_config(layout="wide")
+
 # Sidebar
 st.sidebar.title("Range")
 range_value = st.sidebar.slider("Max Delay (mins)", min_value=0, max_value=100, value=50)
-
-
-
 
 st.image("airplane.png", use_container_width=True)
 
@@ -23,45 +22,6 @@ col4.text_input("Departure Time")
 
 col5, col6 = st.columns(2)
 col5.text_input("Airlines")
-# col6.text_input("Input Field 6")
-
-# Connect to the database
-# @st.cache_resource
-def get_db_connection():
-    return mysql.connector.connect(
-    host="flight-database.c9kakyqtso3n.us-east-1.rds.amazonaws.com",
-    user="admin",
-    password="flightpredictor999",
-    database="flight_db"
-)
-
-# Fetch flights by filters
-def fetch_flights_by_filters(flight_number, flight_date, airline):
-    connection = get_db_connection()
-    cursor = connection.cursor(dictionary=True)
-    query = """
-    SELECT * FROM flight_data
-    WHERE FL_NUMBER = %s AND FL_DATE = %s AND AIRLINE = %s
-    """
-    cursor.execute(query, (flight_number, flight_date, airline))
-    results = cursor.fetchall()
-    cursor.close()
-    connection.close()
-    return pd.DataFrame(results)
-
-# Insert a new flight
-def add_flight(flight):
-    connection = get_db_connection()
-    cursor = connection.cursor()
-    insert_query = """
-    INSERT INTO flight_data (FL_DATE, AIRLINE, AIRLINE_CODE, FL_NUMBER,
-                            ORIGIN_CITY, DEST_CITY)
-    VALUES (%s, %s, %s, %s, %s, %s)
-    """
-    cursor.execute(insert_query, flight)
-    connection.commit()
-    cursor.close()
-    connection.close()
 
 # Streamlit UI
 st.title("Flight Management")
@@ -70,7 +30,6 @@ st.title("Flight Management")
 st.header("Search Flights")
 input_fl_number = st.text_input("Enter Flight Number")
 input_fl_date = st.date_input("Select Flight Date")
-# Fetch airline options for dropdown
 airline_options = ["Delta Air Lines Inc.", "United Air Lines Inc.", "American Airlines Inc.", "Southwest Airlines Co.", "JetBlue Airways", "Alaska Airlines Inc."]
 selected_airline = st.selectbox("Select Airline", options=airline_options)
 
@@ -83,7 +42,6 @@ if st.button("Search Flight"):
             st.warning("No flights found for the given criteria.")
     else:
         st.error("Please provide Flight Number, Flight Date, and Airline!")
-
 
 # Add a new flight
 st.header("Add New Flight")
@@ -102,3 +60,17 @@ if st.button("Add Flight"):
     st.success("Flight added successfully!")
 
 
+# Delete a flight
+st.header("Delete Flight Data")
+delete_fl_number = st.text_input("Enter Flight Number to Delete", key="delete_fl_number")
+delete_fl_date = st.date_input("Select Flight Date to Delete", key="delete_fl_date")
+
+if st.button("Delete Flight"):
+    if delete_fl_number and delete_fl_date:
+        result = delete_flight(delete_fl_number, delete_fl_date)
+        if "error" in result:
+            st.error(f"Error: {result['error']}")
+        else:
+            st.success(result["message"])
+    else:
+        st.error("Please provide Flight Number and Flight Date to delete!")    
