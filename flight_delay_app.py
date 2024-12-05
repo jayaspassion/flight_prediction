@@ -48,6 +48,15 @@ def get_season(month):
         return 'Summer'
     else:
         return 'Fall'
+    
+def safe_transform(encoder, value, placeholder=-1):
+    if value in encoder.classes_:
+        return encoder.transform([value])[0]
+    else:
+        # Add the placeholder to the classes
+        encoder.classes_ = np.append(encoder.classes_, value)
+        return placeholder
+
 
 # Page 1: Flight Delay Prediction
 if page == "Flight Delay Prediction":
@@ -61,6 +70,10 @@ if page == "Flight Delay Prediction":
     col3, col4 = st.columns(2)
     departure_date = col3.date_input("Departure Date")
     departure_time = col4.text_input("Departure Time (HH:MM)")
+    # Validate the time input
+    if departure_time:
+        if not departure_time.isdigit() or not (0 <= int(departure_time) <= 2359) or int(departure_time[-2:]) >= 60:
+            st.error("Invalid time! Please enter a valid time in HHMM format (0000 to 2359).")
 
     col5, col6 = st.columns(2)
     airline = col5.selectbox("Select Airline", list(airline_mapping.keys()))
@@ -70,6 +83,7 @@ if page == "Flight Delay Prediction":
     if st.button("Predict Delay"):
         if departure_city and arrival_city and departure_date and departure_time and airline and flight_number:
 
+
             selected_month = departure_date.month
             season = get_season(selected_month)
 
@@ -78,8 +92,8 @@ if page == "Flight Delay Prediction":
             arrival_city_encoded = label_encoders["DEST_CITY"].transform([arrival_city])[0]
             airline_encoded = label_encoders["AIRLINE"].transform([airline])[0]
             season_encoded = label_encoders["SEASON"].transform([season])[0]
-            date_encoded = label_encoders["FL_DATE"].transform([departure_date])[0]
-            time_encoded = label_encoders["CRS_DEP_TIME"].transform([departure_time])[0]
+            date_encoded = safe_transform(label_encoders["FL_DATE"], departure_date)
+            time_encoded = safe_transform(label_encoders["CRS_DEP_TIME"], departure_time)
 
             # Prepare the input features
             features = np.array([[airline_encoded, season_encoded, departure_city_encoded, arrival_city_encoded, date_encoded, departure_time]])
