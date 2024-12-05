@@ -69,10 +69,16 @@ if page == "Flight Delay Prediction":
 
     col3, col4 = st.columns(2)
     departure_date = col3.date_input("Departure Date")
-    departure_time = col4.text_input("Departure Time (HH:MM)")
+    departure_time = col4.text_input("Departure Time (HHMM)")
+
     # Validate the time input
     if departure_time:
-        if not departure_time.isdigit() or not (0 <= int(departure_time) <= 2359) or int(departure_time[-2:]) >= 60:
+        if (
+            not departure_time.isdigit()  # Ensure input is all digits
+            or len(departure_time) != 4  # Ensure input is exactly 4 characters
+            or not (0 <= int(departure_time[:2]) <= 23)  # Validate hour (HH) is 00-23
+            or not (0 <= int(departure_time[2:]) <= 59)  # Validate minutes (MM) are 00-59
+        ):
             st.error("Invalid time! Please enter a valid time in HHMM format (0000 to 2359).")
 
     col5, col6 = st.columns(2)
