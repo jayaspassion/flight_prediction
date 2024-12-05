@@ -2,7 +2,7 @@ streamlit
 pandas
 mysql-connector-python
 sqlalchemy
-numpy
+numpy==1.26.4
 joblib
-catboost
+catboost==1.2.7
 imbalanced-learn
