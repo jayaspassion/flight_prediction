@@ -130,3 +130,4 @@ def fetch_dest_city_mappings():
         except FileNotFoundError:
             print("Fallback CSV file not found.")
             return {}                
+
