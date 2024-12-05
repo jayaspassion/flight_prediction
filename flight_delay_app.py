@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from models import fetch_flights_by_filters, add_flight, delete_flight
+from models import fetch_flights_by_filters, add_flight, delete_flight, fetch_airline_mappings, fetch_origin_city_mappings, fetch_dest_city_mappings
 import numpy as np
 import joblib
 
@@ -27,9 +27,9 @@ def load_label_encoders():
 # Load the origin city and airline mappings
 @st.cache_resource
 def load_mappings():
-    origin_city_mapping = pd.read_csv("origin_city_mapping.csv").set_index("ORIGIN_CITY")["ORIGIN_CITY_ENCODED"].to_dict()
-    dest_city_mapping = pd.read_csv("dest_city_mapping.csv").set_index("DEST_CITY")["DEST_CITY_ENCODED"].to_dict()
-    airline_mapping = pd.read_csv("airline_mapping.csv").set_index("AIRLINE")["AIRLINE_ENCODED"].to_dict()
+    origin_city_mapping = fetch_origin_city_mappings()
+    dest_city_mapping = fetch_dest_city_mappings()
+    airline_mapping = fetch_airline_mappings()
     return origin_city_mapping, dest_city_mapping, airline_mapping
 
 # Initialize resources

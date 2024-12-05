@@ -1,4 +1,5 @@
 from sqlalchemy import create_engine, Table, Column, Integer, String, MetaData, Date, select, and_, insert, delete
+from sqlalchemy.sql import text  
 from sqlalchemy.exc import SQLAlchemyError
 import pandas as pd
 import streamlit as st
@@ -81,3 +82,51 @@ def delete_flight(flight_number, flight_date):
     except SQLAlchemyError as e:
         print(f"Database error: {e}")
         return {"error": str(e)}        
+
+def fetch_airline_mappings():
+    try:
+        with engine.connect() as connection:
+            query = text("SELECT AIRLINE, AIRLINE_ENCODED FROM airline_mapping")
+            result = connection.execute(query)
+            return {row[0]: row[1] for row in result}
+    except SQLAlchemyError as e:
+        print(f"Database error: {e}. Falling back to CSV.")
+        # Fallback to CSV
+        try:
+            df = pd.read_csv("airline_mapping.csv")
+            return dict(zip(df["AIRLINE"], df["AIRLINE_ENCODED"]))
+        except FileNotFoundError:
+            print("Fallback CSV file not found.")
+            return {}
+        
+def fetch_origin_city_mappings():
+    try:
+        with engine.connect() as connection:
+            query = text("SELECT ORIGIN_CITY, ORIGIN_CITY_ENCODED FROM origin_city_mapping")
+            result = connection.execute(query)
+            return {row[0]: row[1] for row in result}
+    except SQLAlchemyError as e:
+        print(f"Database error: {e}. Falling back to CSV.")
+        # Fallback to CSV
+        try:
+            df = pd.read_csv("origin_city_mapping.csv")
+            return dict(zip(df["ORIGIN_CITY"], df["ORIGIN_CITY_ENCODED"]))
+        except FileNotFoundError:
+            print("Fallback CSV file not found.")
+            return {}
+
+def fetch_dest_city_mappings():
+    try:
+        with engine.connect() as connection:
+            query = text("SELECT DEST_CITY, DEST_CITY_ENCODED FROM dest_city_mapping")
+            result = connection.execute(query)
+            return {row[0]: row[1] for row in result}
+    except SQLAlchemyError as e:
+        print(f"Database error: {e}. Falling back to CSV.")
+        # Fallback to CSV
+        try:
+            df = pd.read_csv("dest_city_mapping.csv")
+            return dict(zip(df["DEST_CITY"], df["DEST_CITY_ENCODED"]))
+        except FileNotFoundError:
+            print("Fallback CSV file not found.")
+            return {}                
