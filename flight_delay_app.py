@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 from models import fetch_flights_by_filters, add_flight, delete_flight
+import numpy as np
+import joblib
 
 # Streamlit UI setup
 st.set_page_config(layout="wide")
@@ -12,38 +14,86 @@ page = st.sidebar.selectbox("Go to", ["Flight Delay Prediction", "Flight Managem
 # Shared Image
 st.image("airplane.png", use_container_width=True)
 
+# Load the saved model
+@st.cache_resource
+def load_model():
+    return joblib.load("catboost-model-final.pkl")
+
+# Load the label encoders
+@st.cache_resource
+def load_label_encoders():
+    return joblib.load("cb_all_label_encoders.pkl")
+
+# Load the origin city and airline mappings
+@st.cache_resource
+def load_mappings():
+    origin_city_mapping = pd.read_csv("origin_city_mapping.csv").set_index("ORIGIN_CITY")["ORIGIN_CITY_ENCODED"].to_dict()
+    dest_city_mapping = pd.read_csv("dest_city_mapping.csv").set_index("DEST_CITY")["DEST_CITY_ENCODED"].to_dict()
+    airline_mapping = pd.read_csv("airline_mapping.csv").set_index("AIRLINE")["AIRLINE_ENCODED"].to_dict()
+    return origin_city_mapping, dest_city_mapping, airline_mapping
+
+# Initialize resources
+model = load_model()
+label_encoders = load_label_encoders()
+origin_city_mapping, dest_city_mapping, airline_mapping = load_mappings()
+
+
+# Define seasons based on month
+def get_season(month):
+    if month in [12, 1, 2]:
+        return 'Winter'
+    elif month in [3, 4, 5]:
+        return 'Spring'
+    elif month in [6, 7, 8]:
+        return 'Summer'
+    else:
+        return 'Fall'
+
 # Page 1: Flight Delay Prediction
 if page == "Flight Delay Prediction":
     st.title("Flight Delay Prediction")
 
     # Input fields for prediction
     col1, col2 = st.columns(2)
-    departure_airport = col1.text_input("Departure Airport")
-    arrival_airport = col2.text_input("Arrival Airport")
+    departure_city = col1.selectbox("Departure City", list(origin_city_mapping.keys()))
+    arrival_city = col2.selectbox("Arrival City", list(dest_city_mapping.keys()))
 
     col3, col4 = st.columns(2)
     departure_date = col3.date_input("Departure Date")
     departure_time = col4.text_input("Departure Time (HH:MM)")
 
     col5, col6 = st.columns(2)
-    airline_options = [
-        "Delta Air Lines Inc.",
-        "United Air Lines Inc.",
-        "American Airlines Inc.",
-        "Southwest Airlines Co.",
-        "JetBlue Airways",
-        "Alaska Airlines Inc.",
-    ]
-    airline = col5.selectbox("Airline", options=airline_options)
+    airline = col5.selectbox("Select Airline", list(airline_mapping.keys()))
     flight_number = col6.text_input("Flight Number")
 
     # Prediction Button
     if st.button("Predict Delay"):
-        if departure_airport and arrival_airport and departure_date and departure_time and airline and flight_number:
-            # Here, integrate your ML model for prediction
-            # For now, we simulate a prediction
-            predicted_delay = 15  # Replace with your model's output
-            st.success(f"Predicted delay: {predicted_delay} minutes")
+        if departure_city and arrival_city and departure_date and departure_time and airline and flight_number:
+
+            selected_month = departure_date.month
+            season = get_season(selected_month)
+
+            # Encode inputs using label encoders
+            departure_city_encoded = label_encoders["ORIGIN_CITY"].transform([departure_city])[0]
+            arrival_city_encoded = label_encoders["DEST_CITY"].transform([arrival_city])[0]
+            airline_encoded = label_encoders["AIRLINE"].transform([airline])[0]
+            season_encoded = label_encoders["SEASON"].transform([season])[0]
+            date_encoded = label_encoders["FL_DATE"].transform([departure_date])[0]
+            time_encoded = label_encoders["CRS_DEP_TIME"].transform([departure_time])[0]
+
+            # Prepare the input features
+            features = np.array([[airline_encoded, season_encoded, departure_city_encoded, arrival_city_encoded, date_encoded, departure_time]])
+
+            # Prediction
+            prediction_proba = model.predict_proba(features)[0]
+            
+            prediction = model.predict(features)
+            predicted_delay = prediction[0]
+            # Display prediction result
+            if predicted_delay == 1:
+                st.success(f"The flight is expected to be **Delayed**")
+            else:
+                st.success(f"The flight is expected to be **On Time**")
         else:
             st.error("Please fill in all the fields to predict the delay.")
 
@@ -55,15 +105,8 @@ elif page == "Flight Management":
     st.header("Search Flights")
     input_fl_number = st.text_input("Enter Flight Number")
     input_fl_date = st.date_input("Select Flight Date")
-    airline_options = [
-        "Delta Air Lines Inc.",
-        "United Air Lines Inc.",
-        "American Airlines Inc.",
-        "Southwest Airlines Co.",
-        "JetBlue Airways",
-        "Alaska Airlines Inc.",
-    ]
-    selected_airline = st.selectbox("Select Airline", options=airline_options)
+
+    selected_airline = st.selectbox("Select Airline", list(airline_mapping.keys()))
 
     if st.button("Search Flight"):
         if input_fl_number and input_fl_date and selected_airline:
@@ -78,19 +121,11 @@ elif page == "Flight Management":
     # Add a new flight
     st.header("Add New Flight")
     FL_DATE = st.date_input("Flight Date")
-    airline_options = [
-        "Delta Air Lines Inc.",
-        "United Air Lines Inc.",
-        "American Airlines Inc.",
-        "Southwest Airlines Co.",
-        "JetBlue Airways",
-        "Alaska Airlines Inc.",
-    ]
-    AIRLINE = st.selectbox("Airline", options=airline_options)
+    AIRLINE = st.selectbox("Select Airline", list(airline_mapping.keys()))
     AIRLINE_CODE = st.text_input("Airline Code")
     FL_NUMBER = st.text_input("Flight Number")
-    ORIGIN_CITY = st.text_input("Origin City")
-    DEST_CITY = st.text_input("Destination City")
+    ORIGIN_CITY = st.selectbox("Departure City", list(origin_city_mapping.keys()))
+    DEST_CITY = st.selectbox("Arrival City", list(dest_city_mapping.keys()))
 
     if st.button("Add Flight"):
         new_flight = (
