@@ -1,9 +1,10 @@
 from sqlalchemy import create_engine, Table, Column, Integer, String, MetaData, Date, select, and_, insert, delete
 from sqlalchemy.exc import SQLAlchemyError
 import pandas as pd
+import streamlit as st
 
-# SQLAlchemy Database URL
-DATABASE_URL = "mysql+mysqlconnector://admin:flightpredictor999@flight-database.c9kakyqtso3n.us-east-1.rds.amazonaws.com/flight_db"
+# Get the Database URL from Streamlit secrets
+DATABASE_URL = st.secrets["DATABASE_URL"]
 
 # Create the engine
 engine = create_engine(DATABASE_URL)
