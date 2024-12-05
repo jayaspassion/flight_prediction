@@ -105,9 +105,9 @@ if page == "Flight Delay Prediction":
             predicted_delay = prediction[0]
             # Display prediction result
             if predicted_delay == 1:
-                st.success(f"The flight is expected to be **Delayed**")
+                st.success(f"The flight is expected to be **Delayed** with a probability of {prediction_proba[1]:.2%}")
             else:
-                st.success(f"The flight is expected to be **On Time**")
+                st.success(f"The flight is expected to be **On Time** with a probability of {prediction_proba[0]:.2%}")
         else:
             st.error("Please fill in all the fields to predict the delay.")
 
@@ -120,11 +120,11 @@ elif page == "Flight Management":
     input_fl_number = st.text_input("Enter Flight Number")
     input_fl_date = st.date_input("Select Flight Date")
 
-    selected_airline = st.selectbox("Select Airline", list(airline_mapping.keys()))
+    input_airline = st.selectbox("Select Airline", list(airline_mapping.keys()), key="airline_selectbox")
 
     if st.button("Search Flight"):
-        if input_fl_number and input_fl_date and selected_airline:
-            filtered_flights = fetch_flights_by_filters(input_fl_number, input_fl_date, selected_airline)
+        if input_fl_number and input_fl_date and input_airline:
+            filtered_flights = fetch_flights_by_filters(input_fl_number, input_fl_date, input_airline)
             if not filtered_flights.empty:
                 st.dataframe(filtered_flights)
             else:
@@ -135,7 +135,7 @@ elif page == "Flight Management":
     # Add a new flight
     st.header("Add New Flight")
     FL_DATE = st.date_input("Flight Date")
-    AIRLINE = st.selectbox("Select Airline", list(airline_mapping.keys()))
+    AIRLINE = st.selectbox("Airline", list(airline_mapping.keys()))
     AIRLINE_CODE = st.text_input("Airline Code")
     FL_NUMBER = st.text_input("Flight Number")
     ORIGIN_CITY = st.selectbox("Departure City", list(origin_city_mapping.keys()))
