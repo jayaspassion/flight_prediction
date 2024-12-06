@@ -6,3 +6,4 @@ numpy==1.26.4
 joblib
 catboost==1.2.7
 imbalanced-learn
+gdown

@@ -3,6 +3,8 @@ import pandas as pd
 from models import fetch_flights_by_filters, add_flight, delete_flight, fetch_airline_mappings, fetch_origin_city_mappings, fetch_dest_city_mappings
 import numpy as np
 import joblib
+import requests
+import gdown
 
 # Streamlit UI setup
 st.set_page_config(layout="wide")
@@ -17,7 +19,10 @@ st.image("airplane.png", use_container_width=True)
 # Load the saved model
 @st.cache_resource
 def load_model():
-    return joblib.load("catboost-model.pkl")
+    file_path = "catboost-model.pkl"
+    gdrive_url = "https://drive.google.com/uc?id=1-qKDchVpwmQLzCie1tzeBYtWyR1tSIW-"
+    gdown.download(gdrive_url, file_path, quiet=False)
+    return joblib.load(file_path)
 
 # Load the label encoders
 @st.cache_resource
