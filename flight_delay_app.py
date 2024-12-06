@@ -17,7 +17,7 @@ st.image("airplane.png", use_container_width=True)
 # Load the saved model
 @st.cache_resource
 def load_model():
-    return joblib.load("catboost-model-final.pkl")
+    return joblib.load("catboost-model.pkl")
 
 # Load the label encoders
 @st.cache_resource
@@ -93,6 +93,8 @@ if page == "Flight Delay Prediction":
             selected_month = departure_date.month
             season = get_season(selected_month)
 
+            day_of_week = departure_date.strftime("%A")
+
             # Encode inputs using label encoders
             departure_city_encoded = label_encoders["ORIGIN_CITY"].transform([departure_city])[0]
             arrival_city_encoded = label_encoders["DEST_CITY"].transform([arrival_city])[0]
@@ -102,7 +104,7 @@ if page == "Flight Delay Prediction":
             time_encoded = safe_transform(label_encoders["CRS_DEP_TIME"], departure_time)
 
             # Prepare the input features
-            features = np.array([[airline_encoded, season_encoded, departure_city_encoded, arrival_city_encoded, date_encoded, departure_time]])
+            features = np.array([[airline_encoded, season_encoded, departure_city_encoded, arrival_city_encoded, date_encoded, departure_time, day_of_week]])
 
             # Prediction
             prediction_proba = model.predict_proba(features)[0]
