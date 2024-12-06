@@ -1,5 +1,4 @@
-# flight_prediction
-Flight Prediction
+# Flight Prediction
 
 Steps for Local Setup
 
