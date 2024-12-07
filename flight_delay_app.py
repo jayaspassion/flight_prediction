@@ -19,7 +19,7 @@ st.image("airplane.png", use_container_width=True)
 @st.cache_resource
 def load_model():
     file_path = "catboost_compressed.pkl.gz"
-    gdrive_url = "https://drive.google.com/uc?id=1612Bev-ZzwF6dlbzK4dpPCfbbnZ6JeGg"
+    gdrive_url = "https://drive.google.com/uc?id=1Q0YTmYl8w-a9GDrfoeNKq0ziycPKn_zI"
     gdown.download(gdrive_url, file_path, quiet=False)
     return joblib.load(file_path)
 
