@@ -1,14 +1,15 @@
 # Flight Delay Prediction
 
+This application has been developed and deployed using `streamlit`. The database has been hosted on AWS RDS.
 Check out the app here! https://flighdelayprediction.streamlit.app/
 
 ## Steps for Local Setup
 
-1. Clone the repo
-2. Navigate to `phase-3` folder
-3. Run `pip install -r requirements.txt`
-4. Install SQLite
-5. Run `sqlite3 flight_data.db` - This creates the table named `flight_data` and also loads the `flight_data.csv` data into the table
+1. Ensure to have Python 3.x setup in local
+2. Clone the repo
+3. Navigate to `phase-3` folder
+4. Run `pip install -r requirements.txt`
+5. Install SQLite **if not present** in your system. MacOS has SQLite by default, and Windows systems having python 3.x will already have sqlite.
 6. To start the app, run `streamlit run flight_delay_app.py`
 
 ## 🚀 Tech Stack
