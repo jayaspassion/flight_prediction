@@ -1,4 +1,4 @@
-# Flight Prediction
+# Flight Delay Prediction
 
 Steps for Local Setup
 
