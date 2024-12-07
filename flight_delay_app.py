@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from models import fetch_flights_by_filters, add_flight, delete_flight, fetch_airline_mappings, fetch_origin_city_mappings, fetch_dest_city_mappings
+from models import fetch_flights_by_filters, add_flight, delete_flight
 import numpy as np
 import joblib
 import requests
@@ -10,8 +10,7 @@ import gdown
 st.set_page_config(layout="wide")
 
 # Sidebar navigation
-st.sidebar.title("Navigation")
-page = st.sidebar.selectbox("Go to", ["Flight Delay Prediction", "Flight Management"])
+page = st.sidebar.selectbox("Go to",["Flight Delay Prediction", "Flight Management"])
 
 # Shared Image
 st.image("airplane.png", use_container_width=True)
@@ -19,29 +18,29 @@ st.image("airplane.png", use_container_width=True)
 # Load the saved model
 @st.cache_resource
 def load_model():
-    file_path = "catboost-model.pkl"
-    gdrive_url = "https://drive.google.com/uc?id=1-qKDchVpwmQLzCie1tzeBYtWyR1tSIW-"
+    file_path = "catboost_compressed.pkl.gz"
+    gdrive_url = "https://drive.google.com/uc?id=1612Bev-ZzwF6dlbzK4dpPCfbbnZ6JeGg"
     gdown.download(gdrive_url, file_path, quiet=False)
     return joblib.load(file_path)
 
 # Load the label encoders
 @st.cache_resource
 def load_label_encoders():
-    return joblib.load("cb_all_label_encoders.pkl")
+    return joblib.load("label_encoders.pkl")
 
-# Load the origin city and airline mappings
+# Extract lists of airlines, origin cities, and destination cities
 @st.cache_resource
-def load_mappings():
-    origin_city_mapping = fetch_origin_city_mappings()
-    dest_city_mapping = fetch_dest_city_mappings()
-    airline_mapping = fetch_airline_mappings()
-    return origin_city_mapping, dest_city_mapping, airline_mapping
+def extract_lists(_label_encoders):
+    airlines = list(label_encoders["AIRLINE"].classes_)
+    origin_cities = list(label_encoders["ORIGIN_CITY"].classes_)
+    dest_cities = list(label_encoders["DEST_CITY"].classes_)
+    
+    return airlines, origin_cities, dest_cities
 
 # Initialize resources
 model = load_model()
 label_encoders = load_label_encoders()
-origin_city_mapping, dest_city_mapping, airline_mapping = load_mappings()
-
+airline_list, origin_city_list, dest_city_list = extract_lists(label_encoders)
 
 # Define seasons based on month
 def get_season(month):
@@ -69,8 +68,8 @@ if page == "Flight Delay Prediction":
 
     # Input fields for prediction
     col1, col2 = st.columns(2)
-    departure_city = col1.selectbox("Departure City", list(origin_city_mapping.keys()))
-    arrival_city = col2.selectbox("Arrival City", list(dest_city_mapping.keys()))
+    departure_city = col1.selectbox("Departure City", origin_city_list)
+    arrival_city = col2.selectbox("Arrival City", dest_city_list)
 
     col3, col4 = st.columns(2)
     departure_date = col3.date_input("Departure Date")
@@ -87,7 +86,7 @@ if page == "Flight Delay Prediction":
             st.error("Invalid time! Please enter a valid time in HHMM format (0000 to 2359).")
 
     col5, col6 = st.columns(2)
-    airline = col5.selectbox("Select Airline", list(airline_mapping.keys()))
+    airline = col5.selectbox("Select Airline", airline_list)
     flight_number = col6.text_input("Flight Number")
 
     # Prediction Button
@@ -133,7 +132,7 @@ elif page == "Flight Management":
     input_fl_number = st.text_input("Enter Flight Number")
     input_fl_date = st.date_input("Select Flight Date")
 
-    input_airline = st.selectbox("Select Airline", list(airline_mapping.keys()), key="airline_selectbox")
+    input_airline = st.selectbox("Select Airline", airline_list, key="airline_selectbox")
 
     if st.button("Search Flight"):
         if input_fl_number and input_fl_date and input_airline:
@@ -148,24 +147,34 @@ elif page == "Flight Management":
     # Add a new flight
     st.header("Add New Flight")
     FL_DATE = st.date_input("Flight Date")
-    AIRLINE = st.selectbox("Airline", list(airline_mapping.keys()))
-    AIRLINE_CODE = st.text_input("Airline Code")
+    AIRLINE = st.selectbox("Airline", airline_list)
     FL_NUMBER = st.text_input("Flight Number")
-    ORIGIN_CITY = st.selectbox("Departure City", list(origin_city_mapping.keys()))
-    DEST_CITY = st.selectbox("Arrival City", list(dest_city_mapping.keys()))
+    ORIGIN_CITY = st.selectbox("Departure City", origin_city_list)
+    DEST_CITY = st.selectbox("Arrival City", dest_city_list)
+    CRS_DEP_TIME = st.text_input("Departure Time (HHMM)")
 
     if st.button("Add Flight"):
-        new_flight = (
-            FL_DATE,
-            AIRLINE,
-            AIRLINE_CODE,
-            FL_NUMBER,
-            ORIGIN_CITY,
-            DEST_CITY,
-        )
-        add_flight(new_flight)
-        st.success("Flight added successfully!")
-
+        if FL_DATE and AIRLINE and FL_NUMBER and ORIGIN_CITY and DEST_CITY and CRS_DEP_TIME:
+            if (
+                not CRS_DEP_TIME.isdigit()  # Ensure input is all digits
+                or len(CRS_DEP_TIME) != 4  # Ensure input is exactly 4 characters
+                or not (0 <= int(CRS_DEP_TIME[:2]) <= 23)  # Validate hour (HH) is 00-23
+                or not (0 <= int(CRS_DEP_TIME[2:]) <= 59)  # Validate minutes (MM) are 00-59
+            ):
+                st.error("Invalid time! Please enter a valid time in HHMM format (0000 to 2359).")
+            else:
+                new_flight = (
+                    FL_DATE,
+                    AIRLINE,
+                    FL_NUMBER,
+                    ORIGIN_CITY,
+                    DEST_CITY,
+                    CRS_DEP_TIME
+                )
+                add_flight(new_flight)
+                st.success("Flight added successfully!")
+        else:
+            st.error("Please fill in all the fields to predict the delay.")
     # Delete a flight
     st.header("Delete Flight Data")
     delete_fl_number = st.text_input("Enter Flight Number to Delete", key="delete_fl_number")

@@ -16,10 +16,10 @@ flight_data = Table(
     "flight_data", metadata,
     Column("FL_DATE", Date),
     Column("AIRLINE", String(255)),
-    Column("AIRLINE_CODE", String(10)),
     Column("FL_NUMBER", String(255)),
     Column("ORIGIN_CITY", String(255)),
     Column("DEST_CITY", String(255)),
+    Column("CRS_DEP_TIME", String(4))
 )
 
 # Fetch flights by filters
@@ -48,8 +48,8 @@ def add_flight(flight):
             query = insert(flight_data).values(
                 FL_DATE=flight[0],
                 AIRLINE=flight[1],
-                AIRLINE_CODE=flight[2],
-                FL_NUMBER=flight[3],
+                FL_NUMBER=flight[2],
+                CRS_DEP_TIME=flight[3],
                 ORIGIN_CITY=flight[4],
                 DEST_CITY=flight[5]
             )
@@ -82,52 +82,3 @@ def delete_flight(flight_number, flight_date):
     except SQLAlchemyError as e:
         print(f"Database error: {e}")
         return {"error": str(e)}        
-
-def fetch_airline_mappings():
-    try:
-        with engine.connect() as connection:
-            query = text("SELECT AIRLINE, AIRLINE_ENCODED FROM airline_mapping")
-            result = connection.execute(query)
-            return {row[0]: row[1] for row in result}
-    except SQLAlchemyError as e:
-        print(f"Database error: {e}. Falling back to CSV.")
-        # Fallback to CSV
-        try:
-            df = pd.read_csv("airline_mapping.csv")
-            return dict(zip(df["AIRLINE"], df["AIRLINE_ENCODED"]))
-        except FileNotFoundError:
-            print("Fallback CSV file not found.")
-            return {}
-        
-def fetch_origin_city_mappings():
-    try:
-        with engine.connect() as connection:
-            query = text("SELECT ORIGIN_CITY, ORIGIN_CITY_ENCODED FROM origin_city_mapping")
-            result = connection.execute(query)
-            return {row[0]: row[1] for row in result}
-    except SQLAlchemyError as e:
-        print(f"Database error: {e}. Falling back to CSV.")
-        # Fallback to CSV
-        try:
-            df = pd.read_csv("origin_city_mapping.csv")
-            return dict(zip(df["ORIGIN_CITY"], df["ORIGIN_CITY_ENCODED"]))
-        except FileNotFoundError:
-            print("Fallback CSV file not found.")
-            return {}
-
-def fetch_dest_city_mappings():
-    try:
-        with engine.connect() as connection:
-            query = text("SELECT DEST_CITY, DEST_CITY_ENCODED FROM dest_city_mapping")
-            result = connection.execute(query)
-            return {row[0]: row[1] for row in result}
-    except SQLAlchemyError as e:
-        print(f"Database error: {e}. Falling back to CSV.")
-        # Fallback to CSV
-        try:
-            df = pd.read_csv("dest_city_mapping.csv")
-            return dict(zip(df["DEST_CITY"], df["DEST_CITY_ENCODED"]))
-        except FileNotFoundError:
-            print("Fallback CSV file not found.")
-            return {}                
-
