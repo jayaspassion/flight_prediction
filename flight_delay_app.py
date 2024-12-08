@@ -10,7 +10,12 @@ import gdown
 st.set_page_config(layout="wide")
 
 # Sidebar navigation
-page = st.sidebar.selectbox("Go to",["Flight Delay Prediction", "Flight Management"])
+page = st.sidebar.selectbox(
+    "Menu Options",
+    [
+        "✈️ Flight Delay Prediction",
+        "🛠️ Flight Management"
+    ])
 
 # Shared Image
 st.image("airplane.png", use_container_width=True)
@@ -63,7 +68,7 @@ def safe_transform(encoder, value, placeholder=-1):
 
 
 # Page 1: Flight Delay Prediction
-if page == "Flight Delay Prediction":
+if page == "✈️ Flight Delay Prediction":
     st.title("Flight Delay Prediction")
 
     # Input fields for prediction
@@ -117,14 +122,14 @@ if page == "Flight Delay Prediction":
             predicted_delay = prediction[0]
             # Display prediction result
             if predicted_delay == 1:
-                st.success(f"The flight is expected to be **Delayed** with a probability of {prediction_proba[1]:.2%}")
+                st.error(f"❌ The flight is expected to be **Delayed** with a probability of {prediction_proba[1]:.2%}")
             else:
-                st.success(f"The flight is expected to be **On Time** with a probability of {prediction_proba[0]:.2%}")
+                st.success(f"✅ The flight is expected to be **On Time** with a probability of {prediction_proba[0]:.2%}")
         else:
             st.error("Please fill in all the fields to predict the delay.")
 
 # Page 2: Flight Management
-elif page == "Flight Management":
+elif page == "🛠️ Flight Management":
     st.title("Flight Management")
 
     # Search Flights
