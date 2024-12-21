@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from models import fetch_flights_by_filters, add_flight, delete_flight
+from models import fetch_flights_by_filters, add_flight, delete_flight, update_flight
 import numpy as np
 import joblib
 import requests
@@ -98,7 +98,6 @@ if page == "✈️ Flight Delay Prediction":
     if st.button("Predict Delay"):
         if departure_city and arrival_city and departure_date and departure_time and airline and flight_number:
 
-
             selected_month = departure_date.month
             season = get_season(selected_month)
 
@@ -194,3 +193,39 @@ elif page == "🛠️ Flight Management":
                 st.success(result["message"])
         else:
             st.error("Please provide Flight Number and Flight Date to delete!")
+
+    # Update an existing flight
+    st.header("Update Flight Data")
+    update_fl_number = st.text_input("Enter Flight Number to Update", key="update_fl_number")
+    update_fl_date = st.date_input("Select Flight Date to Update", key="update_fl_date")
+    update_airline = st.selectbox("New Airline", airline_list, key="update_airline")
+    update_origin_city = st.selectbox("New Departure City", origin_city_list, key="update_origin_city")
+    update_dest_city = st.selectbox("New Arrival City", dest_city_list, key="update_dest_city")
+    update_crs_dep_time = st.text_input("New Departure Time (HHMM)", key="update_crs_dep_time")
+
+    if st.button("Update Flight"):
+        if update_fl_number and update_fl_date and update_airline and update_origin_city and update_dest_city and update_crs_dep_time:
+            if (
+                not update_crs_dep_time.isdigit()  
+                or len(update_crs_dep_time) != 4  
+                or not (0 <= int(update_crs_dep_time[:2]) <= 23)  
+                or not (0 <= int(update_crs_dep_time[2:]) <= 59)  
+            ):
+                st.error("Invalid time! Please enter a valid time in HHMM format (0000 to 2359).")
+            else:
+                result = update_flight(
+                    update_fl_number,
+                    update_fl_date,
+                    update_airline,
+                    update_origin_city,
+                    update_dest_city,
+                    update_crs_dep_time
+                )
+                if "error" in result:
+                    st.error(f"Error: {result['error']}")
+                else:
+                    st.success(result["message"])
+        else:
+            st.error("Please fill in all the fields to update the flight!")
+
+        
