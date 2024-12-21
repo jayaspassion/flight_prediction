@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Table, Column, Integer, String, MetaData, Date, select, and_, insert, delete
+from sqlalchemy import create_engine, Table, Column, Integer, String, MetaData, Date, select, and_, insert, delete, update
 from sqlalchemy.sql import text  
 from sqlalchemy.exc import SQLAlchemyError
 import pandas as pd
@@ -58,8 +58,36 @@ def add_flight(flight):
     except SQLAlchemyError as e:
         print(f"Database error: {e}")
 
+# Update a flight
+def update_flight(flight_number, flight_date, airline, origin_city, dest_city, crs_dep_time):
+    try:
+        with engine.connect() as connection:
+            # Begin a transaction
+            transaction = connection.begin()
+            query = update(flight_data).where(
+                and_(
+                    flight_data.c.FL_NUMBER == flight_number,
+                    flight_data.c.FL_DATE == flight_date
+                )
+            ).values(
+                AIRLINE=airline,
+                ORIGIN_CITY=origin_city,
+                DEST_CITY=dest_city,
+                CRS_DEP_TIME=crs_dep_time
+            )
+            result = connection.execute(query)
+            transaction.commit()
+            if result.rowcount > 0:
+                print(f"Updated {result.rowcount} flight(s) successfully.")
+                return {"message": "Flight updated successfully"}
+            else:
+                print("No flight found for the given criteria.")
+                return {"message": "No flight found"}
+    except SQLAlchemyError as e:
+        print(f"Database error: {e}")
+        return {"error": str(e)}
 
-# **Delete a flight by FL_NUMBER and FL_DATE**
+# Delete a flight
 def delete_flight(flight_number, flight_date):
     try:
         with engine.connect() as connection:
